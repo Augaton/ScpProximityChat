@@ -1,4 +1,4 @@
-using ZoneShilari.Common.Hints;
+using AugatonLib.Hints;
 
 namespace ScpProximityChat.API
 {
