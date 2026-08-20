@@ -1,5 +1,9 @@
 # ScpProximityChat 2.0
 
+
+> Portage EXILED 9.14.2 d'un plugin de **Bolton**. Depot non affilie a
+> l'auteur d'origine. Voir [NOTICE.md](NOTICE.md) pour l'attribution.
+
 Permet aux SCP de parler dans le chat de proximite, entendus par les humains a portee.
 
 **EXILED 9.14.2** — `dotnet build -c Release ScpProximityChat/ScpProximityChat.csproj`
