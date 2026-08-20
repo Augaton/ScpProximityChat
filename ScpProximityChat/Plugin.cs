@@ -21,11 +21,15 @@ namespace ScpProximityChat
 
         public override Version RequiredExiledVersion => new Version(9, 14, 2);
 
+        public static Plugin Instance { get; private set; }
+
         private ProximityChatHandlers proximityChatHandlers;
         private List<SettingBase> registeredSettings;
 
         public override void OnEnabled()
         {
+            Instance = this;
+
             ValidateConfig();
 
             ScpProximityChat.API.HintBridge.YCoordinate = Config.HintYCoordinate;
@@ -48,6 +52,7 @@ namespace ScpProximityChat
             UnregisterSettings();
 
             proximityChatHandlers = null;
+            Instance = null;
 
             base.OnDisabled();
         }

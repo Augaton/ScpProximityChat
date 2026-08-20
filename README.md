@@ -36,3 +36,35 @@ Deux modes via `activation_type` :
 
 Les messages d'activation, de desactivation et de rappel de touche sont
 configurables individuellement (type broadcast ou hint, duree, affichage).
+
+## Dependances
+
+Ce plugin depend de **ZoneShilari.Common**, la bibliotheque partagee de la
+collection.
+
+| Fichier | Destination |
+|---|---|
+| `ScpProximityChat.dll` | `Plugins/7777/` |
+| `ZoneShilari.Common.dll` | `Plugins/dependencies/` |
+| HintServiceMeow | `Plugins/7777/` |
+
+`ZoneShilari.Common.dll` ne va **jamais** dans `Plugins/7777/` : EXILED
+tenterait de le charger comme plugin. Il doit etre deploye avant ce plugin et
+mis a jour en meme temps.
+
+Pour compiler ce depot isolement, cloner
+[ZoneShilari.Common](https://github.com/Augaton/ZoneShilari.Common) a cote,
+ou passer `-p:CommonProject=chemin/vers/ZoneShilari.Common.csproj`.
+
+## Commandes staff
+
+| Commande | Permission | Effet |
+|---|---|---|
+| `scpproximity status` | `scpproximitychat.manage` | Mode d'activation, roles, volume et portee |
+
+Alias `prox`.
+
+Toutes les commandes de la collection partagent le meme socle : verification de
+permission en premiere ligne, arguments bornes en longueur, exceptions
+capturees, actions a impact tracees avec l'auteur. Une commande parente sans
+argument liste ses sous-commandes.
