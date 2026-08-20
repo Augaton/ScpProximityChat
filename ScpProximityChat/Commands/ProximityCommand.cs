@@ -19,7 +19,9 @@ namespace ScpProximityChat.Commands
 
         public override void LoadGeneratedCommands()
         {
-            RegisterCommand(new StatusCommand("ScpProximityChat", "2.1.0", Permission, builder =>
+            RegisterCommand(new StatusCommand(
+                "ScpProximityChat",
+                typeof(Plugin), Permission, builder =>
             {
                 Config config = Plugin.Instance.Config;
                 builder.AppendLine($"  activation : {config.ActivationType}");
