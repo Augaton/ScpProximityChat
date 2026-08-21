@@ -19,6 +19,8 @@ namespace ScpProximityChat.Commands
 
         public override void LoadGeneratedCommands()
         {
+            RegisterCommand(new CollectionCommand(Permission));
+
             RegisterCommand(new StatusCommand(
                 "ScpProximityChat",
                 typeof(Plugin), Permission, builder =>

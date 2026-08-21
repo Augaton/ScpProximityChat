@@ -6,6 +6,7 @@ using Exiled.API.Features.Core.UserSettings;
 using PlayerRoles;
 using ScpProximityChat.Enums;
 using ScpProximityChat.Handlers;
+using AugatonLib.Runtime;
 
 namespace ScpProximityChat
 {
@@ -41,6 +42,8 @@ namespace ScpProximityChat
             if (Config.ActivationType == ActivationType.ServerSpecificSettings)
                 RegisterSettings();
 
+            PluginDirectory.Register(this, Capability.Hints);
+
             base.OnEnabled();
         }
 
@@ -50,6 +53,8 @@ namespace ScpProximityChat
             ScpProximityChat.API.HintBridge.Clear();
 
             UnregisterSettings();
+
+            PluginDirectory.Unregister(this);
 
             proximityChatHandlers = null;
             Instance = null;
