@@ -42,6 +42,8 @@ namespace ScpProximityChat
             if (Config.ActivationType == ActivationType.ServerSpecificSettings)
                 RegisterSettings();
 
+            Exiled.Events.Handlers.Server.ReloadedConfigs += OnReloadedConfigs;
+
             PluginDirectory.Register(this, Capability.Hints);
 
             base.OnEnabled();
@@ -54,6 +56,7 @@ namespace ScpProximityChat
 
             UnregisterSettings();
 
+            Exiled.Events.Handlers.Server.ReloadedConfigs -= OnReloadedConfigs;
             PluginDirectory.Unregister(this);
 
             proximityChatHandlers = null;
@@ -62,8 +65,26 @@ namespace ScpProximityChat
             base.OnDisabled();
         }
 
+        private void OnReloadedConfigs()
+        {
+            try
+            {
+                ValidateConfig();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"OnReloadedConfigs: {e}");
+            }
+        }
+
         private void ValidateConfig()
         {
+            if (Config.ScpRoles is null)
+            {
+                Log.Warn("ScpRoles est absent, remis a un ensemble vide.");
+                Config.ScpRoles = new HashSet<RoleTypeId>();
+            }
+
             Config.ScpRoles.RemoveWhere(role => !role.IsScp() || role == RoleTypeId.Scp079);
 
             if (Config.ScpRoles.Count == 0)

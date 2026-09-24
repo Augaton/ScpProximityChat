@@ -12,6 +12,7 @@ using ScpProximityChat.Enums;
 using UnityEngine;
 using UserSettings.ServerSpecific;
 using VoiceChat;
+using VoiceChat.Codec;
 using VoiceChat.Networking;
 using Object = UnityEngine.Object;
 
@@ -20,6 +21,7 @@ namespace ScpProximityChat.Handlers
     public sealed class ProximityChatHandlers
     {
         private readonly Config config;
+        private readonly ActivationType activationType;
         private readonly Dictionary<string, SpeakerToy> toggledPlayers = new Dictionary<string, SpeakerToy>();
         private readonly Dictionary<string, float> lastToggle = new Dictionary<string, float>();
         private readonly float effectiveVolume;
@@ -27,6 +29,7 @@ namespace ScpProximityChat.Handlers
         public ProximityChatHandlers(Config config)
         {
             this.config = config;
+            activationType = config.ActivationType;
             effectiveVolume = Mathf.Clamp(config.Volume, 0f, config.MaxVolume);
         }
 
@@ -37,7 +40,7 @@ namespace ScpProximityChat.Handlers
             Exiled.Events.Handlers.Player.ChangingRole += OnChangingRole;
             Exiled.Events.Handlers.Player.Left += OnLeft;
 
-            switch (config.ActivationType)
+            switch (activationType)
             {
                 case ActivationType.ServerSpecificSettings:
                     ServerSpecificSettingsSync.ServerOnSettingValueReceived += OnSettingValueReceived;
@@ -57,7 +60,7 @@ namespace ScpProximityChat.Handlers
             Exiled.Events.Handlers.Player.ChangingRole -= OnChangingRole;
             Exiled.Events.Handlers.Player.Left -= OnLeft;
 
-            switch (config.ActivationType)
+            switch (activationType)
             {
                 case ActivationType.ServerSpecificSettings:
                     ServerSpecificSettingsSync.ServerOnSettingValueReceived -= OnSettingValueReceived;
@@ -83,13 +86,23 @@ namespace ScpProximityChat.Handlers
             ScpProximityChat.API.HintBridge.Clear();
         }
 
-        private void OnRoundRestarting() => ClearAll();
+        private void OnRoundRestarting()
+        {
+            try
+            {
+                ClearAll();
+            }
+            catch (Exception e)
+            {
+                Log.Error($"OnRoundRestarting: {e}");
+            }
+        }
 
         private void OnVoiceChatting(VoiceChattingEventArgs ev)
         {
             try
             {
-                if (ev?.Player is null || ev.VoiceMessage.Channel != VoiceChatChannel.ScpChat)
+                if (ev?.Player is null || !ev.IsAllowed || ev.VoiceMessage.Channel != VoiceChatChannel.ScpChat)
                     return;
 
                 if (!toggledPlayers.TryGetValue(ev.Player.UserId, out SpeakerToy speaker) || speaker is null)
@@ -101,7 +114,9 @@ namespace ScpProximityChat.Handlers
                     return;
 
                 float[] samples = opusHandler.SampleBuffer;
-                opusHandler.Decoder.Decode(ev.VoiceMessage.Data, ev.VoiceMessage.DataLength, samples);
+
+                if (opusHandler.Decoder.Decode(ev.VoiceMessage.Data, ev.VoiceMessage.DataLength, samples) != samples.Length)
+                    return;
 
                 for (int i = 0; i < samples.Length; i++)
                     samples[i] = Mathf.Clamp(samples[i] * effectiveVolume, -1f, 1f);
@@ -111,7 +126,7 @@ namespace ScpProximityChat.Handlers
 
                 AudioMessage audioMessage = new AudioMessage(speaker.ControllerId, encoded, dataLength);
 
-                foreach (Player target in Player.List)
+                foreach (Player target in Player.Dictionary.Values)
                 {
                     if (target is null || target.ReferenceHub is null)
                         continue;
@@ -128,7 +143,13 @@ namespace ScpProximityChat.Handlers
                     target.ReferenceHub.connectionToClient.Send(audioMessage);
                 }
 
-                ev.IsAllowed = config.UseDefaultScpChat;
+                if (!config.UseDefaultScpChat)
+                    ev.IsAllowed = false;
+            }
+            catch (OpusException e)
+            {
+                if (config.Debug)
+                    Log.Debug($"OnVoiceChatting: paquet voix invalide ignore ({e.Message}).");
             }
             catch (Exception e)
             {
@@ -302,7 +323,7 @@ namespace ScpProximityChat.Handlers
 
         private static void DestroySpeaker(SpeakerToy speaker)
         {
-            if (speaker is null || speaker.gameObject is null)
+            if (speaker == null)
                 return;
 
             NetworkServer.Destroy(speaker.gameObject);
